@@ -396,27 +396,32 @@ fn over(top: Color, bottom: Color) -> Color {
 
 /// A `radio-v2` item (`radio.css`): the 16 pt control in its 16 × 20 stack, the 13/440 label on
 /// a 20 line and the 12/440 description under it, 8 apart; the description in `tone` when given.
+/// A control that is not selected is flat on `bg-base`; only the selected one has the top light
+/// (`packages/ui/src/forms/radio/radio.css:92`, `:125`). The dot has the depth gradient over its
+/// grey, a ring in the contrast icon colour and the small elements' drop (`radio.css:140-160`).
 fn radio_widget(k: &rune_kit::Kit, label: &str, description: &str, checked: bool, disabled: bool, tone: Option<Color>, label_lh: f32) -> El {
     let c = &k.c;
-    let (base, sheen) = if checked { (c.bg_accent, k.light_on(0.2, c.bg_accent)) } else { (c.bg_base, k.light(0.06)) };
     let mut control = el()
         .key("control")
         .size(16.0, 16.0)
         .absolute(0.0, 2.0)
         .radius(8.0)
-        .fill(base)
-        .gradient(sheen, k.light(0.0))
         .box_shadow(Shadow { spread: 0.5, color: c.border_strong, inset: true, ..Shadow::default() });
+    control = if checked {
+        control.fill(c.bg_accent).gradient(k.light_on(0.2, c.bg_accent), k.light(0.0))
+    } else {
+        control.fill(c.bg_base)
+    };
     if checked {
-        control = control.child(
-            el().key("dot")
-                .size(6.0, 6.0)
-                .absolute(5.0, 5.0)
-                .radius(3.0)
-                .fill(c.knob_on)
-                .box_shadow(Shadow { spread: 0.5, color: k.on(c.depth_top, c.knob_on), inset: true, ..Shadow::default() })
-                .box_shadow(Shadow { y: 0.5, blur: 0.5, color: k.dark_a(0.4), ..Shadow::default() }),
-        );
+        let dot = el()
+            .key("dot")
+            .size(6.0, 6.0)
+            .absolute(5.0, 5.0)
+            .radius(3.0)
+            .fill(c.knob_on)
+            .gradient(k.on(c.depth_top, c.knob_on), k.on(c.depth_bottom, c.knob_on))
+            .box_shadow(Shadow { spread: 0.5, color: c.icon_contrast, inset: true, ..Shadow::default() });
+        control = control.child(k.elevate(dot, &k.elevation.elements));
         if !disabled {
             control = control.hover(over(k.on(c.contrast_hover, c.bg_accent), c.bg_accent));
         }
